@@ -17,6 +17,23 @@ repositories {
     mavenCentral()
 }
 
+// Define new source set
+sourceSets {
+    cit { // This name should match with the folder name
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+        java {
+            srcDirs('src/cit')
+        }
+    }
+}
+
+// extend all dependencies from unit tests
+configurations {
+    citImplementation.extendsFrom testImplementation
+    citRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -25,4 +42,26 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    testLogging {
+        events "passed"
+    }
 }
+
+// Register the integration test task
+tasks.register('integrationTest', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.cit.output.classesDirs
+    classpath = sourceSets.cit.runtimeClasspath
+    mustRunAfter test
+
+    useJUnitPlatform()
+
+    testLogging {
+        events "passed"
+    }
+}
+
+check.dependsOn integrationTest
